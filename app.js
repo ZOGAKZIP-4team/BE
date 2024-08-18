@@ -205,5 +205,32 @@ app.post('/groups/:id/like', async (req, res) => {
     }
 });
 
+
+// 그룹 공개 여부 확인
+app.get('/groups/:id/is-public', async (req, res) => {
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send({ message: '잘못된 요청입니다' });
+    }
+
+    try {
+        const group = await Group.findById(id).select('isPublic');
+
+        if (group) {
+            res.send({
+                id: group._id,
+                isPublic: group.isPublic
+            });
+        } else {
+            res.status(404).send({ message: '존재하지 않습니다' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
+
 app.listen(3000, () => console.log('Server Started'));
 mongoose.connect(DATABASE_URL).then(() => console.log('Connected to DB'));
