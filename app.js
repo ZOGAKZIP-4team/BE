@@ -179,5 +179,31 @@ app.get('/groups/:id/verify-password', async (req, res) => {
 });
 
 
+// 그룹 공감하기
+app.post('/groups/:id/like', async (req, res) => {
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).send({ message: '잘못된 요청입니다' });
+    }
+
+    try {
+        const group = await Group.findByIdAndUpdate(
+            id,
+            { $inc: { likeCount: 1 } },
+            { new: true }
+        );
+
+        if (group) {
+            res.send({ message: '그룹 공감하기 성공' });
+        } else {
+            res.status(404).send({ message: '존재하지 않습니다' });
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
 app.listen(3000, () => console.log('Server Started'));
 mongoose.connect(DATABASE_URL).then(() => console.log('Connected to DB'));
