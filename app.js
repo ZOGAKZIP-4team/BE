@@ -1,4 +1,4 @@
-\\import express from 'express';
+import express from 'express';
 import mongoose from 'mongoose';
 import { DATABASE_URL } from './env.js';
 import Post from './models/Post.js';
