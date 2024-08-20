@@ -1,11 +1,14 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import { DATABASE_URL } from './env.js';
 import Group from './models/Group.js'
+import * as dotenv from 'dotenv';
+dotenv.config();
+import cors from 'cors';
 
 const app = express();
-app.use(express.json());
 
+app.use(cors());
+app.use(express.json());
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
@@ -31,33 +34,23 @@ app.get('/groups/:id', async (req, res) => {
 })
 
 
-// 그룹 목록 조회
 app.get('/groups', async (req, res) => {
     const sort = req.query.sort || 'latest';
     const page = Number(req.query.page) || 1;
     const pageSize = Number(req.query.pageSize) || 50;
     const keyword = req.query.keyword || ''; 
     const isPublic = req.query.isPublic;
-    
-    // 정렬 옵션
-    const sortOptions = {
-        latest: { createdAt: 'desc' },
-        mostPosted: { postCount: 'desc' },
-        mostLiked: { likeCount: 'desc' },
-        mostBadge: { badgeCount: 'desc' } 
-    };
 
-    const sortOption = sortOptions[sort] || sortOptions.latest;
+    const filterConditions = {};
 
     // 검색어
-    const filterConditions = {};
     if (keyword) {
         filterConditions.$or = [
-            { name: { $regex: keyword, $options: 'i' } },
-            { introduction: { $regex: keyword, $options: 'i' } }
+            { name: { $regex: keyword, $options: 'i' } }
         ];
     }
 
+    // 공개 여부
     if (isPublic !== undefined) {
         filterConditions.isPublic = isPublic === 'true';
     }
@@ -70,13 +63,38 @@ app.get('/groups', async (req, res) => {
         }
     }
 
+    // 정렬
+    const sortOptions = {
+        latest: { createdAt: -1 },
+        mostPosted: { postCount: -1 },
+        mostLiked: { likeCount: -1 },
+        mostBadge: { badgesLength: -1 }
+    };
+
+    const sortOption = sortOptions[sort] || sortOptions.latest;
+
+    let aggregatePipeline = [
+        { $match: filterConditions }
+    ];
+
+    if (sort === 'mostBadge') {
+        aggregatePipeline.push({
+            $addFields: {
+                badgesLength: { $size: '$badges' }
+            }
+        });
+    }
+
+    aggregatePipeline.push(
+        { $sort: sortOption },
+        { $skip: (page - 1) * pageSize },
+        { $limit: pageSize }
+    );
+
+    const groups = await Group.aggregate(aggregatePipeline);
+
     const totalItems = await Group.countDocuments(filterConditions);
     const totalPages = Math.ceil(totalItems / pageSize);
-
-    const groups = await Group.find(filterConditions)
-        .sort(sortOption)
-        .skip((page - 1) * pageSize)
-        .limit(pageSize);
 
     const response = {
         currentPage: page,
@@ -86,8 +104,7 @@ app.get('/groups', async (req, res) => {
     };
 
     res.send(response);
-
-})
+});
 
 
 // 그룹 수정
@@ -232,5 +249,5 @@ app.get('/groups/:id/is-public', async (req, res) => {
 });
 
 
-app.listen(3000, () => console.log('Server Started'));
-mongoose.connect(DATABASE_URL).then(() => console.log('Connected to DB'));
+mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
+app.listen(process.env.PORT || 3000, () => console.log('Server Started'));

@@ -4,12 +4,15 @@ const GroupSchema = new mongoose.Schema(
     {
         name: {
             type: String,
+            required: true
         },
         password: {
             type: String,
+            required: true
         },
         imageUrl: {
             type: String,
+            required: false
         },
         isPublic: {
             type: Boolean,
@@ -17,12 +20,15 @@ const GroupSchema = new mongoose.Schema(
         },
         likeCount: {
             type: Number,
+            default: 0
         },
         badges: {
             type: Array,
+            required: false
         },
         postCount: {
             type: String,
+            default: 0
         },
         createdAt: {
             type: Date,
@@ -30,6 +36,7 @@ const GroupSchema = new mongoose.Schema(
         },
         introduction: {
             type: String,
+            required: true
         }
     },
     {
