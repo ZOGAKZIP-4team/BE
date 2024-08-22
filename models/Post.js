@@ -2,8 +2,7 @@ import mongoose from 'mongoose';
 
 const postSchema = new mongoose.Schema({
     groupId: {
-        type: Number,
-        required: true
+        type: mongoose.Schema.Types.ObjectId, 
     },
     nickname: {
         type: String,
