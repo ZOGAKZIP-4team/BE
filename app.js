@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { DATABASE_URL } from './env.js';
 import Post from './models/Post.js';
 
-mongoose.connect(DATABASE_URL).then(() => console.log('Connected to MongoDB'));
+mongoose.connect(DATABASE_URL).then(() => console.log('Connected to DB!!'));
 
 const app = express();
 app.use(express.json());
@@ -18,7 +18,7 @@ app.post('/api/groups/:groupId/posts', async (req, res) => {
 
         const newPost = new Post({
             ...req.body,
-            groupId: req.params.groupId,
+            groupId: mongoose.Types.ObjectId(req.params.groupId), 
             likeCount: 0,
             commentCount: 0,
             createdAt: new Date()
@@ -41,7 +41,7 @@ app.get('/api/groups/:groupId/posts', async (req, res) => {
 
     try {
         const query = {
-            groupId: req.params.groupId,
+            groupId: mongoose.Types.ObjectId(req.params.groupId), 
             ...(keyword && { title: { $regex: keyword, $options: 'i' } }),
             ...(isPublic !== undefined && { isPublic: isPublic === 'true' })
         };
