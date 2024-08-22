@@ -10,7 +10,7 @@ const seedPosts = async () => {
   try {
     const posts = [
       {
-        groupId: 1,
+        groupId: mongoose.Types.ObjectId("64e3caadfc13ae1ab4000001"), 
         nickname: "김철수",
         title: "맛집 탐방: 서울의 숨은 맛집",
         content: "서울에 숨겨진 맛집들을 탐방해보았습니다. 다양한 음식을 즐길 수 있는 곳을 소개합니다.",
@@ -25,7 +25,7 @@ const seedPosts = async () => {
         commentCount: 3
       },
       {
-        groupId: 1,
+        groupId: mongoose.Types.ObjectId("64e3caadfc13ae1ab4000002"), 
         nickname: "이영희",
         title: "주말 여행: 제주도 힐링 여행기",
         content: "제주도의 아름다운 풍경과 함께 힐링 여행을 다녀왔습니다. 사진과 함께 여행기를 공유합니다.",
@@ -40,7 +40,7 @@ const seedPosts = async () => {
         commentCount: 5
       },
       {
-        groupId: 2,
+        groupId: mongoose.Types.ObjectId("64e3caadfc13ae1ab4000002"), 
         nickname: "박민수",
         title: "사진 촬영 팁: 인물 사진 잘 찍는 법",
         content: "인물 사진을 잘 찍기 위한 몇 가지 팁을 공유합니다. 초보자도 쉽게 따라할 수 있는 방법들입니다.",
@@ -55,7 +55,7 @@ const seedPosts = async () => {
         commentCount: 10
       },
       {
-        groupId: 2,
+        groupId: mongoose.Types.ObjectId("64e3caadfc13ae1ab4000003"), // 또 다른 그룹의 ObjectId
         nickname: "정현아",
         title: "독서 후기: 올해의 베스트셀러",
         content: "올해 읽은 책들 중 베스트셀러 몇 권을 추천드립니다. 각 책의 내용과 느낌을 간단히 정리했습니다.",
