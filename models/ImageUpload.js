@@ -9,7 +9,11 @@ const imageSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-});
+},
+{
+    versionKey: false 
+}
+);
 
 const Image = mongoose.model('Image', imageSchema);
 export default Image;
