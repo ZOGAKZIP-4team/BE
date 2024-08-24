@@ -27,7 +27,7 @@ const GroupSchema = new mongoose.Schema(
             required: false
         },
         postCount: {
-            type: String,
+            type: Number,
             default: 0
         },
         createdAt: {

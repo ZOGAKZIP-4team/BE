@@ -1,6 +1,7 @@
 import express from 'express';
 import mongoose from 'mongoose';
 import Group from './models/Group.js'
+import Post from './models/Post.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors';
@@ -34,8 +35,9 @@ app.get('/groups/:id', async (req, res) => {
 })
 
 
+// 그룹 목록 조회
 app.get('/groups', async (req, res) => {
-    const sort = req.query.sort || 'latest';
+    const sortBy = req.query.sortBy || 'latest';
     const page = Number(req.query.page) || 1;
     const pageSize = Number(req.query.pageSize) || 50;
     const keyword = req.query.keyword || ''; 
@@ -71,13 +73,13 @@ app.get('/groups', async (req, res) => {
         mostBadge: { badgesLength: -1 }
     };
 
-    const sortOption = sortOptions[sort] || sortOptions.latest;
+    const sortOption = sortOptions[sortBy] || sortOptions.latest;
 
     let aggregatePipeline = [
         { $match: filterConditions }
     ];
 
-    if (sort === 'mostBadge') {
+    if (sortBy === 'mostBadge') {
         aggregatePipeline.push({
             $addFields: {
                 badgesLength: { $size: '$badges' }
@@ -110,7 +112,8 @@ app.get('/groups', async (req, res) => {
 // 그룹 수정
 app.put('/groups/:id', async (req, res) => {
     const id = req.params.id;
-    const { password, updateData } = req.body; 
+    const { password, ...updateData } = req.body; 
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).send({ message: '잘못된 요청입니다' });
     }
@@ -121,7 +124,6 @@ app.put('/groups/:id', async (req, res) => {
         if (!group) {
             return res.status(404).send({ message: '존재하지 않습니다' });
         }
-
         if (group.password !== password) {
             return res.status(403).send({ message: '비밀번호가 틀렸습니다' });
         }
@@ -145,14 +147,12 @@ app.delete('/groups/:id', async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).send({ message: '잘못된 요청입니다' });
     }
-
     try {
         const group = await Group.findById(id);
 
         if (!group) {
             return res.status(404).send({ message: '존재하지 않습니다' });
         }
-
         if (group.password !== password) {
             return res.status(403).send({ message: '비밀번호가 틀렸습니다' });
         }
@@ -245,6 +245,184 @@ app.get('/groups/:id/is-public', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
+
+// 게시글 등록
+app.post('/groups/:groupId/posts', async (req, res) => {
+    try {
+        const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic } = req.body;
+        if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !location || !moment || isPublic === undefined) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        const newPost = new Post({
+            ...req.body,
+            groupId: req.params.groupId, 
+            
+        });
+        await newPost.save();
+        res.status(200).send(newPost);
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 게시글 목록 조회
+app.get('/groups/:groupId/posts', async (req, res) => {
+    const { page = 1, pageSize = 10, sortBy = 'latest', keyword, isPublic } = req.query;
+    const sortOptions = {
+        latest: { createdAt: -1 },
+        mostCommented: { commentCount: -1 },
+        mostLiked: { likeCount: -1 },
+    };
+
+    try {
+        const query = {
+            groupId: req.params.groupId, 
+            ...(keyword && { title: { $regex: keyword, $options: 'i' } }),
+            ...(isPublic !== undefined && { isPublic: isPublic === 'true' })
+        };
+
+        const totalItemCount = await Post.countDocuments(query);
+        const posts = await Post.find(query)
+            .sort(sortOptions[sortBy])
+            .skip((page - 1) * pageSize)
+            .limit(parseInt(pageSize));
+
+        res.status(200).json({
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalItemCount / pageSize),
+            totalItemCount,
+            data: posts
+        });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 게시글 상세 조회
+app.get('/posts/:postId', async (req, res) => {
+    try {
+        const post = await Post.findById(req.params.postId);
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        res.status(200).send(post);
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 게시글 수정
+app.put('/posts/:postId', async (req, res) => {
+    const { postId } = req.params;
+    const { postPassword, ...updateData } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+        return res.status(400).send({ message: '잘못된 요청입니다' });
+    }
+
+    try {
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).send({ message: '존재하지 않습니다' });
+        }
+       
+        if (post.postPassword !== postPassword) {
+            return res.status(403).send({ message: '비밀번호가 틀렸습니다' });
+        }
+
+        Object.assign(post, updateData); 
+        await post.save();
+
+        res.send(post);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
+
+// 게시글 삭제
+app.delete('/posts/:postId', async (req, res) => {
+    const { postId } = req.params;
+    const { postPassword } = req.body;
+
+    try {
+        const post = await Post.findById(postId);
+        console.log(post);
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        if (post.postPassword !== postPassword) {
+            return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
+        }
+
+        await Post.findByIdAndDelete(postId);
+        res.send({ message: '게시글 삭제 성공' });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 게시글 공감하기
+app.post('/posts/:postId/like', async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        post.likeCount += 1;
+        await post.save();
+        res.status(200).json({ message: "게시글 공감하기 성공" });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 게시글 조회 권한 확인
+app.post('/posts/:postId/verify-password', async (req, res) => {
+    const { postId } = req.params;
+    const { password } = req.body;
+
+    try {
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        if (post.postPassword === password) {
+            res.status(200).json({ message: "비밀번호가 확인되었습니다" });
+        } else {
+            res.status(401).json({ message: "비밀번호가 틀렸습니다" });
+        }
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 게시글 공개 여부 확인
+app.get('/posts/:postId/is-public', async (req, res) => {
+    const { postId } = req.params;
+
+    try {
+        const post = await Post.findById(postId);
+        if (!post) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        res.status(200).json({ id: postId, isPublic: post.isPublic });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
 
