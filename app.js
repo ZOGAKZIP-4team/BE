@@ -507,10 +507,37 @@ app.get('/posts/:postId/comments', async (req, res) => {
         console.error(error);
         res.status(500).send({ message: '서버 오류가 발생했습니다.' });
     }
+});
 
-    
-    
 
+// 댓글 수정
+app.put('/comments/:commentId', async(req, res) => {
+    const { commentId } = req.params;
+    const { password, ...updateData } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+        return res.status(400).send({ message: '잘못된 요청입니다' });
+    }
+
+    try {
+        const comment = await Comment.findById(commentId);
+
+        if (!comment) {
+            return res.status(404).send({ message: '존재하지 않습니다' });
+        }
+       
+        if (comment.password !== password) {
+            return res.status(403).send({ message: '비밀번호가 틀렸습니다' });
+        }
+
+        Object.assign(comment, updateData); 
+        await comment.save();
+
+        res.send(comment);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Internal Server Error' });
+    }
 });
 
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
