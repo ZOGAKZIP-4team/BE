@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Group from './models/Group.js'
 import Post from './models/Post.js';
+import Comment from './models/Comment.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors';
@@ -441,6 +442,27 @@ app.get('/posts/:postId/is-public', async (req, res) => {
             return res.status(404).json({ message: "존재하지 않습니다" });
         }
         res.status(200).json({ id: postId, isPublic: post.isPublic });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 댓글 등록
+app.post('/posts/:postId/comments', async (req, res) => {
+    try {
+        const { nickname, content, password } = req.body;
+        if (!nickname || !content || !password ) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        const newComment = new Comment({
+            ...req.body,
+            postId: req.params.postId, 
+            
+        });
+        await newComment.save();
+        res.status(200).send(newComment);
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
