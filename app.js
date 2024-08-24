@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Group from './models/Group.js'
 import Post from './models/Post.js';
+import Comment from './models/Comment.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors';
@@ -13,9 +14,29 @@ app.use(express.json());
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
-    const newGroup = await Group.create(req.body)
-    res.status(201).send(newGroup);
-})
+    try {
+        const { name, password, imageUrl, isPublic, introduction } = req.body;
+
+        if (!name || !password || !introduction) {
+            return res.status(400).send({ message: '잘못된 요청입니다' });
+        }
+
+        const newGroup = new Group({
+            name,
+            password,
+            imageUrl,
+            isPublic,
+            introduction
+        });
+
+        await newGroup.save();
+
+        res.status(201).send(newGroup);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: '서버 오류' });
+    }
+});
 
 
 // 그룹 상세 정보 조회
@@ -426,6 +447,121 @@ app.get('/posts/:postId/is-public', async (req, res) => {
     }
 });
 
+
+// 댓글 등록
+app.post('/posts/:postId/comments', async (req, res) => {
+    try {
+        const { nickname, content, password } = req.body;
+        if (!nickname || !content || !password ) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        const newComment = new Comment({
+            ...req.body,
+            postId: req.params.postId, 
+            
+        });
+        await newComment.save();
+        res.status(200).send(newComment);
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
+
+// 댓글 목록 조회
+app.get('/posts/:postId/comments', async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const page = Number(req.query.page) || 1;
+        const pageSize = Number(req.query.pageSize) || 10;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).send({ message: '잘못된 요청입니다' });
+        }
+
+        const filterConditions = { postId };
+        const totalItemCount = await Comment.countDocuments(filterConditions);
+        const totalPages = Math.ceil(totalItemCount / pageSize);
+
+        const comments = await Comment.find(filterConditions)
+            .sort({ createdAt: -1 }) 
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .select('nickname content createdAt');
+
+        const response = {
+            currentPage: page,
+            totalPages,
+            totalItemCount,
+            data: comments.map(comment => ({
+                id: comment._id,
+                nickname: comment.nickname,
+                content: comment.content,
+                createdAt: comment.createdAt
+            }))
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: '서버 오류가 발생했습니다.' });
+    }
+});
+
+
+// 댓글 수정
+app.put('/comments/:commentId', async(req, res) => {
+    const { commentId } = req.params;
+    const { password, ...updateData } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+        return res.status(400).send({ message: '잘못된 요청입니다' });
+    }
+
+    try {
+        const comment = await Comment.findById(commentId);
+
+        if (!comment) {
+            return res.status(404).send({ message: '존재하지 않습니다' });
+        }
+       
+        if (comment.password !== password) {
+            return res.status(403).send({ message: '비밀번호가 틀렸습니다' });
+        }
+
+        Object.assign(comment, updateData); 
+        await comment.save();
+
+        res.send(comment);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: 'Internal Server Error' });
+    }
+});
+
+
+// 댓글 삭제
+app.delete('/comments/:commentId', async (req, res) => {
+    const { commentId } = req.params;
+    const { password } = req.body;
+
+    try {
+        const comment = await Comment.findById(commentId);
+   
+        if (!comment) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        if (comment.password !== password) {
+            return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
+        }
+
+        await Comment.findByIdAndDelete(commentId);
+        res.send({ message: '댓글 삭제 성공' });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
 
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
 app.listen(process.env.PORT || 3000, () => console.log('Server Started'));

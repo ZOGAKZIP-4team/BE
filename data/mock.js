@@ -175,4 +175,32 @@ const postsData = [
   }
 ];
 
-export default { groupsData, postsData };
+
+const commentsData = [
+  {
+    postId: "66c89209f79a4cf75d65de9c",
+    nickname: "string",
+    content: "string",
+    password: "string",
+    createdAt: "2024-02-22T07:47:49.803Z"
+  },
+
+  {
+    postId: "66c89209f79a4cf75d65de9c",
+    nickname: "string1",
+    content: "string1",
+    password: "string",
+    createdAt: "2024-02-22T07:47:49.803Z"
+  },
+
+  {
+    postId: "66c89209f79a4cf75d65de9c",
+    nickname: "string31",
+    content: "string13",
+    password: "string",
+    createdAt: "2024-02-22T07:47:49.803Z"
+  },
+
+];
+
+export default { groupsData, postsData, commentsData };
