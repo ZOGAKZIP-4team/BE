@@ -14,6 +14,7 @@ app.use(express.json());
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
+    console.log('Request body:', req.body);
     try {
         const { name, password, imageUrl, isPublic, introduction } = req.body;
 
@@ -28,13 +29,44 @@ app.post('/groups', async (req, res) => {
             isPublic,
             introduction
         });
+        const saveGroup = await newGroup.save();
 
-        await newGroup.save();
+        const response = {
+            id: saveGroup._id,
+            name: saveGroup.name,
+            imageUrl: saveGroup.imageUrl,
+            isPublic: saveGroup.isPublic,
+            likeCount: saveGroup.likeCount,
+            badges: saveGroup.badges,
+            postCount: saveGroup.postCount,
+            createdAt: saveGroup.createdAt,
+            introduction: saveGroup.introduction
+        };
 
-        res.status(201).send(newGroup);
+
+        res.status(201).send(response);
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: '서버 오류' });
+    }
+});
+
+app.post('/groups/:groupId/posts', async (req, res) => {
+    try {
+        const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic } = req.body;
+        if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !location || !moment || isPublic === undefined) {
+            return res.status(400).json({ message: "잘못된 요청입니다" });
+        }
+
+        const newPost = new Post({
+            ...req.body,
+            groupId: req.params.groupId, 
+            
+        });
+        await newPost.save();
+        res.status(200).send(newPost);
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
 
@@ -452,6 +484,9 @@ app.get('/posts/:postId/is-public', async (req, res) => {
 app.post('/posts/:postId/comments', async (req, res) => {
     try {
         const { nickname, content, password } = req.body;
+        if (typeof password !== 'string') {
+            return res.status(400).send({ message: 'Password must be a string' });
+        }
         if (!nickname || !content || !password ) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
