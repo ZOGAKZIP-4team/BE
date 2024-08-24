@@ -469,5 +469,49 @@ app.post('/posts/:postId/comments', async (req, res) => {
 });
 
 
+// 댓글 목록 조회
+app.get('/posts/:postId/comments', async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const page = Number(req.query.page) || 1;
+        const pageSize = Number(req.query.pageSize) || 10;
+
+        if (!mongoose.Types.ObjectId.isValid(postId)) {
+            return res.status(400).send({ message: '잘못된 요청입니다' });
+        }
+
+        const filterConditions = { postId };
+        const totalItemCount = await Comment.countDocuments(filterConditions);
+        const totalPages = Math.ceil(totalItemCount / pageSize);
+
+        const comments = await Comment.find(filterConditions)
+            .sort({ createdAt: -1 }) 
+            .skip((page - 1) * pageSize)
+            .limit(pageSize)
+            .select('nickname content createdAt');
+
+        const response = {
+            currentPage: page,
+            totalPages,
+            totalItemCount,
+            data: comments.map(comment => ({
+                id: comment._id,
+                nickname: comment.nickname,
+                content: comment.content,
+                createdAt: comment.createdAt
+            }))
+        };
+
+        res.status(200).json(response);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: '서버 오류가 발생했습니다.' });
+    }
+
+    
+    
+
+});
+
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
 app.listen(process.env.PORT || 3000, () => console.log('Server Started'));
