@@ -540,5 +540,28 @@ app.put('/comments/:commentId', async(req, res) => {
     }
 });
 
+
+// 댓글 삭제
+app.delete('/comments/:commentId', async (req, res) => {
+    const { commentId } = req.params;
+    const { password } = req.body;
+
+    try {
+        const comment = await Comment.findById(commentId);
+   
+        if (!comment) {
+            return res.status(404).json({ message: "존재하지 않습니다" });
+        }
+        if (comment.password !== password) {
+            return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
+        }
+
+        await Comment.findByIdAndDelete(commentId);
+        res.send({ message: '댓글 삭제 성공' });
+    } catch (error) {
+        res.status(400).json({ message: "잘못된 요청입니다" });
+    }
+});
+
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
 app.listen(process.env.PORT || 3000, () => console.log('Server Started'));
