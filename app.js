@@ -13,9 +13,29 @@ app.use(express.json());
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
-    const newGroup = await Group.create(req.body)
-    res.status(201).send(newGroup);
-})
+    try {
+        const { name, password, imageUrl, isPublic, introduction } = req.body;
+
+        if (!name || !password || !introduction) {
+            return res.status(400).send({ message: '잘못된 요청입니다' });
+        }
+
+        const newGroup = new Group({
+            name,
+            password,
+            imageUrl,
+            isPublic,
+            introduction
+        });
+
+        await newGroup.save();
+
+        res.status(201).send(newGroup);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: '서버 오류' });
+    }
+});
 
 
 // 그룹 상세 정보 조회
