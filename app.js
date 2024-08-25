@@ -221,7 +221,7 @@ app.delete('/groups/:id', async (req, res) => {
 
 
 // 비공개 그룹 조회 권한 확인
-app.get('/groups/:id/verify-password', async (req, res) => {
+app.post('/groups/:id/verify-password', async (req, res) => {
     const id = req.params.id;
     const { password } = req.body; 
 
@@ -444,7 +444,7 @@ app.post('/posts/:postId/like', async (req, res) => {
 
 
 // 게시글 조회 권한 확인
-app.get('/posts/:postId/verify-password', async (req, res) => {
+app.post('/posts/:postId/verify-password', async (req, res) => {
     const { postId } = req.params;
     const { password } = req.body;
 
