@@ -444,7 +444,7 @@ app.post('/posts/:postId/like', async (req, res) => {
 
 
 // 게시글 조회 권한 확인
-app.post('/posts/:postId/verify-password', async (req, res) => {
+app.get('/posts/:postId/verify-password', async (req, res) => {
     const { postId } = req.params;
     const { password } = req.body;
 
