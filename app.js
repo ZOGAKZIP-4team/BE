@@ -44,7 +44,6 @@ app.post('/api/image', upload.single('image'), async (req, res) => {
     res.status(200).json({ imageUrl });
 });
 
-// Static 파일 제공 (이미지 접근을 위해)
 app.use('/uploads', express.static('uploads'));
 
 // 서버 실행
