@@ -203,4 +203,10 @@ const commentsData = [
 
 ];
 
-export default { groupsData, postsData, commentsData };
+const imagesData = [
+  {
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/ko/4/4a/%EC%8B%A0%EC%A7%B1%EA%B5%AC.png'
+  }
+];
+
+export default { groupsData, postsData, commentsData, imagesData };

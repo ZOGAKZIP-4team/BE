@@ -3,6 +3,7 @@ import mock from './mock.js';
 import Group from '../models/Group.js';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
+import Image from '../models/ImageUpload.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -16,5 +17,8 @@ await Post.insertMany(mock.postsData);
 
 await Comment.deleteMany({});
 await Comment.insertMany(mock.commentsData);
+
+await Image.deleteMany({}); 
+await Image.insertMany(mock.imagesData); 
 
 mongoose.connection.close();

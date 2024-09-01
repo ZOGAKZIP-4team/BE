@@ -3,7 +3,11 @@ import mongoose from 'mongoose';
 import Group from './models/Group.js'
 import Post from './models/Post.js';
 import Comment from './models/Comment.js';
+import Image from './models/ImageUpload.js';
 import * as dotenv from 'dotenv';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 dotenv.config();
 import cors from 'cors';
 
@@ -14,7 +18,6 @@ app.use(express.json());
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
-    console.log('Request body:', req.body);
     try {
         const { name, password, imageUrl, isPublic, introduction } = req.body;
 
@@ -597,6 +600,59 @@ app.delete('/comments/:commentId', async (req, res) => {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
+
+
+
+
+// 이미지 저장 경로 설정
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = './uploads/';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|gif/;
+    const mimeType = allowedTypes.test(file.mimetype);
+    const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  
+    if (mimeType && extName) {
+      return cb(null, true);
+    } else {
+      cb(new Error('Only images are allowed'));
+    }
+  };
+  
+  // Multer 미들웨어 설정
+  const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter
+  });
+
+// 이미지 업로드 엔드포인트
+app.post('/image', upload.single('image'), async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: '이미지 파일이 필요합니다.' });
+    }
+
+    const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+
+    // MongoDB에 이미지 URL 저장
+    const image = new Image({ imageUrl });
+    await image.save();
+
+    res.status(200).json({ imageUrl });
+});
+
+app.use('/uploads', express.static('uploads'));
 
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
 app.listen(process.env.PORT || 3000, () => console.log('Server Started'));
