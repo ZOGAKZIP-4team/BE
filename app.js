@@ -10,6 +10,8 @@ import path from 'path';
 import fs from 'fs';
 dotenv.config();
 import cors from 'cors';
+import { checkAndAwardBadges } from './services/BadgeService.js'; 
+import { checkBadgesPeriodically } from './services/BadgeService.js'; 
 
 const app = express();
 
@@ -51,25 +53,6 @@ app.post('/groups', async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: '서버 오류' });
-    }
-});
-
-app.post('/groups/:groupId/posts', async (req, res) => {
-    try {
-        const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic } = req.body;
-        if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !location || !moment || isPublic === undefined) {
-            return res.status(400).json({ message: "잘못된 요청입니다" });
-        }
-
-        const newPost = new Post({
-            ...req.body,
-            groupId: req.params.groupId, 
-            
-        });
-        await newPost.save();
-        res.status(200).send(newPost);
-    } catch (error) {
-        res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
 
@@ -268,6 +251,7 @@ app.post('/groups/:id/like', async (req, res) => {
         );
 
         if (group) {
+            await checkAndAwardBadges(id);
             res.send({ message: '그룹 공감하기 성공' });
         } else {
             res.status(404).send({ message: '존재하지 않습니다' });
@@ -309,6 +293,7 @@ app.get('/groups/:id/is-public', async (req, res) => {
 app.post('/groups/:groupId/posts', async (req, res) => {
     try {
         const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic } = req.body;
+        const groupId = req.params.groupId;
         if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !location || !moment || isPublic === undefined) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
@@ -319,6 +304,9 @@ app.post('/groups/:groupId/posts', async (req, res) => {
             
         });
         await newPost.save();
+        await Group.findByIdAndUpdate(groupId, { $inc: { postCount: 1 } });
+        await checkAndAwardBadges(groupId);
+
         res.status(200).send(newPost);
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
@@ -439,6 +427,10 @@ app.post('/posts/:postId/like', async (req, res) => {
         }
         post.likeCount += 1;
         await post.save();
+
+        const groupId = post.groupId
+
+        await checkAndAwardBadges(groupId);
         res.status(200).json({ message: "게시글 공감하기 성공" });
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
@@ -655,4 +647,9 @@ app.post('/image', upload.single('image'), async (req, res) => {
 app.use('/uploads', express.static('uploads'));
 
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
-app.listen(process.env.PORT || 3000, () => console.log('Server Started'));
+app.listen(process.env.PORT || 3000, async() => {
+    console.log('Server Started')
+
+    await checkBadgesPeriodically();
+    setInterval(checkBadgesPeriodically, 24 * 60 * 60 * 1000);
+});
