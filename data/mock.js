@@ -7,7 +7,7 @@ const groupsData = [
     likeCount: 9,
     badges: [],
     postCount: 0,
-    createdAt: "2022-08-07T07:47:49.803Z",
+    createdAt: "2022-08-07 16:47:49",
     introduction: "화목한 짱구네 가족 이야기"
   },
   {
@@ -18,7 +18,7 @@ const groupsData = [
     likeCount: 5,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-08T07:47:49.803Z",
+    createdAt: "2024-08-08 16:47:49",
     introduction: "도라에몽과 친구들의 모험 이야기"
   },
   {
@@ -29,7 +29,7 @@ const groupsData = [
     likeCount: 0,
     badges: ['7일 연속 추억 등록', '추억 수 20개 이상 등록'],
     postCount: 21,
-    createdAt: "2024-08-10T07:47:49.803Z",
+    createdAt: "2024-08-10 16:47:49",
     introduction: "지우와 이슬이, 웅이와 함께한 피카츄의 추억"
   },
   {
@@ -40,7 +40,7 @@ const groupsData = [
     likeCount: 6,
     badges: [],
     postCount: 3,
-    createdAt: "2024-08-11T07:47:49.803Z",
+    createdAt: "2024-08-11 16:47:49",
     introduction: "루피의 보물 찾기 대작전"
   },
   {
@@ -51,7 +51,7 @@ const groupsData = [
     likeCount: 0,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-11T09:47:49.803Z",
+    createdAt: "2024-08-11 18:47:49",
     introduction: "달빛 아래 추억들"
   },
   {
@@ -62,7 +62,7 @@ const groupsData = [
     likeCount: 0,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-12T07:47:49.803Z",
+    createdAt: "2024-08-12 16:47:49",
     introduction: "알라딘과 자스민 공주의 추억"
   },
   {
@@ -73,7 +73,7 @@ const groupsData = [
     likeCount: 0,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-12T13:47:49.803Z",
+    createdAt: "2024-08-12 22:47:49",
     introduction: "자매(엘사와 안나)의 여행 기록"
   },
   {
@@ -84,7 +84,7 @@ const groupsData = [
     likeCount: 0,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-13T13:47:49.803Z",
+    createdAt: "2024-08-13 22:47:49",
     introduction: "기쁨이와 슬픔이의 우정 여행 기록"
   },
   {
@@ -95,7 +95,7 @@ const groupsData = [
     likeCount: 0,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-13T19:47:49.803Z",
+    createdAt: "2024-08-14 04:47:49",
     introduction: "감정변화를 겪으며 성장해가는 라일리의 성장 기록입니다!"
   },
   {
@@ -106,10 +106,9 @@ const groupsData = [
     likeCount: 0,
     badges: [],
     postCount: 0,
-    createdAt: "2024-08-14T13:47:49.803Z",
+    createdAt: "2024-08-14 22:47:49",
     introduction: "우리의 보스가 되어줄 악당을 찾아서~"
   },
-  
 ];
 
 const postsData = [
@@ -123,11 +122,11 @@ const postsData = [
     imageUrl: "http://example.com/image1.jpg",
     tags: ['맛집', '서울'],
     location: "서울, 대한민국",
-    moment: new Date("2024-08-01T10:00:00.000+00:00"),
+    moment: "2024-08-01 19:00:00",
     isPublic: true,
     likeCount: 12,
     commentCount: 3,
-    createdAt: "2024-08-01T10:00:00.000+00:00"
+    createdAt: "2024-08-01 19:00:00"
   },
   {
     groupId: "66d55d64228f05bb15b14c4e", 
@@ -139,11 +138,11 @@ const postsData = [
     imageUrl: "http://example.com/image2.jpg",
     tags: [],
     location: "제주도, 대한민국",
-    moment: new Date("2024-08-02T10:00:00.000+00:00"),
+    moment: "2024-08-02 19:00:00",
     isPublic: false,
     likeCount: 20,
     commentCount: 5,
-    createdAt: "2024-08-02T10:00:00.000+00:00"
+    createdAt: "2024-08-02 19:00:00"
   },
   {
     groupId: "66d55d64228f05bb15b14c4e", 
@@ -155,11 +154,11 @@ const postsData = [
     imageUrl: "http://example.com/image3.jpg",
     tags: ['사진'],
     location: "인천, 대한민국",
-    moment: new Date("2024-08-03T10:00:00.000+00:00"),
+    moment: "2024-08-03 19:00:00",
     isPublic: true,
     likeCount: 30,
     commentCount: 10,
-    createdAt: "2024-08-03T10:00:00.000+00:00"
+    createdAt: "2024-08-03 19:00:00"
   },
   {
     groupId: "66d55d64228f05bb15b14c4e", // 또 다른 그룹의 ObjectId
@@ -171,14 +170,13 @@ const postsData = [
     imageUrl: "http://example.com/image4.jpg",
     tags: ['독서', '베스트셀러'],
     location: "부산, 대한민국",
-    moment: new Date("2024-08-04T10:00:00.000+00:00"),
+    moment: "2024-08-04 19:00:00",
     isPublic: true,
     likeCount: 25,
     commentCount: 7,
-    createdAt: "2024-08-04T10:00:00.000+00:00"
+    createdAt: "2024-08-04 19:00:00"
   }
 ];
-
 
 const commentsData = [
   {
@@ -186,25 +184,22 @@ const commentsData = [
     nickname: "string",
     content: "string",
     password: "string",
-    createdAt: "2024-02-22T07:47:49.803Z"
+    createdAt: "2024-02-22 16:47:49"
   },
-
   {
     postId: "66c89209f79a4cf75d65de9c",
     nickname: "string1",
     content: "string1",
     password: "string",
-    createdAt: "2024-02-22T07:47:49.803Z"
+    createdAt: "2024-02-22 16:47:49"
   },
-
   {
     postId: "66c89209f79a4cf75d65de9c",
     nickname: "string31",
     content: "string13",
     password: "string",
-    createdAt: "2024-02-22T07:47:49.803Z"
+    createdAt: "2024-02-22 16:47:49"
   },
-
 ];
 
 const imagesData = [
