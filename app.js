@@ -37,7 +37,8 @@ app.post('/groups', async (req, res) => {
             password,
             imageUrl,
             isPublic,
-            introduction
+            introduction,
+            createdAt: moment().tz('Asia/Seoul').toDate()  // 한국 시간으로 저장
         });
         const saveGroup = await newGroup.save();
 
@@ -293,21 +294,29 @@ app.get('/groups/:id/is-public', async (req, res) => {
 // 게시글 등록
 app.post('/groups/:groupId/posts', async (req, res) => {
     try {
-        const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment, isPublic } = req.body;
+        const { nickname, title, content, postPassword, groupPassword, imageUrl, tags, location, moment: postMoment, isPublic } = req.body;
         const groupId = req.params.groupId;
-        if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !location || !moment || isPublic === undefined) {
+        if (!nickname || !title || !content || !postPassword || !groupPassword || !imageUrl || !location || !postMoment || isPublic === undefined) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
         const newPost = new Post({
             ...req.body,
-            groupId: req.params.groupId, 
+            groupId: req.params.groupId,
+            moment: moment.tz(postMoment, 'Asia/Seoul').toDate(),  // 한국 시간으로 저장
+            createdAt: moment().tz('Asia/Seoul').toDate()  // 한국 시간으로 저장
         });
         await newPost.save();
         await Group.findByIdAndUpdate(groupId, { $inc: { postCount: 1 } });
         await checkAndAwardBadges(groupId);
 
-        res.status(200).send(newPost);
+        const response = {
+            ...newPost._doc,
+            moment: moment(newPost.moment).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss'),
+            createdAt: moment(newPost.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss')
+        };
+
+        res.status(200).send(response);
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
@@ -359,7 +368,14 @@ app.get('/posts/:postId', async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "존재하지 않습니다" });
         }
-        res.status(200).send(post);
+
+        const response = {
+            ...post._doc,
+            moment: moment(post.moment).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss'),
+            createdAt: moment(post.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss')
+        };
+
+        res.status(200).send(response);
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
@@ -489,9 +505,16 @@ app.post('/posts/:postId/comments', async (req, res) => {
         const newComment = new Comment({
             ...req.body,
             postId: req.params.postId,
+            createdAt: moment().tz('Asia/Seoul').toDate()  // 한국 시간으로 저장
         });
         await newComment.save();
-        res.status(200).send(newComment);
+
+        const response = {
+            ...newComment._doc,
+            createdAt: moment(newComment.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss')
+        };
+
+        res.status(200).send(response);
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
@@ -560,9 +583,12 @@ app.put('/comments/:commentId', async (req, res) => {
         Object.assign(comment, updateData); 
         await comment.save();
 
-        comment.createdAt = moment(comment.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+        const response = {
+            ...comment._doc,
+            createdAt: moment(comment.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss')
+        };
 
-        res.send(comment);
+        res.send(response);
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: 'Internal Server Error' });
