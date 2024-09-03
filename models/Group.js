@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import moment from 'moment-timezone';
 
 const GroupSchema = new mongoose.Schema(
     {
@@ -32,7 +33,7 @@ const GroupSchema = new mongoose.Schema(
         },
         createdAt: {
             type: Date,
-            default: Date.now
+            default: () => moment().tz('Asia/Seoul').toDate()
         },
         introduction: {
             type: String,

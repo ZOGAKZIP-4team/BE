@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import Group from './models/Group.js'
+import Group from './models/Group.js';
 import Post from './models/Post.js';
 import Comment from './models/Comment.js';
 import Image from './models/ImageUpload.js';
@@ -11,12 +11,17 @@ import fs from 'fs';
 dotenv.config();
 import cors from 'cors';
 import { checkAndAwardBadges } from './services/BadgeService.js'; 
-import { checkBadgesPeriodically } from './services/BadgeService.js'; 
+import { checkBadgesPeriodically } from './services/BadgeService.js';
+import moment from 'moment-timezone';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+mongoose.connect(process.env.DATABASE_URL)
+    .then(() => console.log('Connected to DB'))
+    .catch((error) => console.error('DB connection error:', error));
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
@@ -44,10 +49,9 @@ app.post('/groups', async (req, res) => {
             likeCount: saveGroup.likeCount,
             badges: saveGroup.badges,
             postCount: saveGroup.postCount,
-            createdAt: saveGroup.createdAt,
+            createdAt: moment(saveGroup.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss'),
             introduction: saveGroup.introduction
         };
-
 
         res.status(201).send(response);
     } catch (error) {
@@ -55,7 +59,6 @@ app.post('/groups', async (req, res) => {
         res.status(500).send({ message: '서버 오류' });
     }
 });
-
 
 // 그룹 상세 정보 조회
 app.get('/groups/:id', async (req, res) => {
@@ -67,12 +70,12 @@ app.get('/groups/:id', async (req, res) => {
 
     const group = await Group.findById(id);
     if (group) {
+        group.createdAt = moment(group.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
         res.send(group);
     } else {
-        res.status(404).send({ message: '존재하지 않습니다'});
+        res.status(404).send({ message: '존재하지 않습니다' });
     }
-})
-
+});
 
 // 그룹 목록 조회
 app.get('/groups', async (req, res) => {
@@ -134,6 +137,10 @@ app.get('/groups', async (req, res) => {
 
     const groups = await Group.aggregate(aggregatePipeline);
 
+    groups.forEach(group => {
+        group.createdAt = moment(group.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+    });
+
     const totalItems = await Group.countDocuments(filterConditions);
     const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -146,7 +153,6 @@ app.get('/groups', async (req, res) => {
 
     res.send(response);
 });
-
 
 // 그룹 수정
 app.put('/groups/:id', async (req, res) => {
@@ -170,13 +176,14 @@ app.put('/groups/:id', async (req, res) => {
         Object.assign(group, updateData); 
         await group.save();
 
+        group.createdAt = moment(group.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+
         res.send(group);
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: 'Internal Server Error' });
     }
-})
-
+});
 
 // 그룹 삭제
 app.delete('/groups/:id', async (req, res) => {
@@ -205,7 +212,6 @@ app.delete('/groups/:id', async (req, res) => {
     }
 });
 
-
 // 비공개 그룹 조회 권한 확인
 app.post('/groups/:id/verify-password', async (req, res) => {
     const id = req.params.id;
@@ -220,8 +226,6 @@ app.post('/groups/:id/verify-password', async (req, res) => {
 
          if (!group.isPublic) {
             if (group.password !== password) {
-                console.log(group.password);
-                console.log(password);
                 return res.status(401).send({ message: '비밀번호가 틀렸습니다' });
             } else {
                 res.send({ message: '비밀번호가 확인되었습니다' });
@@ -233,7 +237,6 @@ app.post('/groups/:id/verify-password', async (req, res) => {
         res.status(500).send({ message: 'Internal Server Error' });
     }
 });
-
 
 // 그룹 공감하기
 app.post('/groups/:id/like', async (req, res) => {
@@ -262,7 +265,6 @@ app.post('/groups/:id/like', async (req, res) => {
     }
 });
 
-
 // 그룹 공개 여부 확인
 app.get('/groups/:id/is-public', async (req, res) => {
     const id = req.params.id;
@@ -288,7 +290,6 @@ app.get('/groups/:id/is-public', async (req, res) => {
     }
 });
 
-
 // 게시글 등록
 app.post('/groups/:groupId/posts', async (req, res) => {
     try {
@@ -301,7 +302,6 @@ app.post('/groups/:groupId/posts', async (req, res) => {
         const newPost = new Post({
             ...req.body,
             groupId: req.params.groupId, 
-            
         });
         await newPost.save();
         await Group.findByIdAndUpdate(groupId, { $inc: { postCount: 1 } });
@@ -312,7 +312,6 @@ app.post('/groups/:groupId/posts', async (req, res) => {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
-
 
 // 게시글 목록 조회
 app.get('/groups/:groupId/posts', async (req, res) => {
@@ -336,17 +335,22 @@ app.get('/groups/:groupId/posts', async (req, res) => {
             .skip((page - 1) * pageSize)
             .limit(parseInt(pageSize));
 
+        const transformedPosts = posts.map(post => ({
+            ...post._doc,
+            moment: moment(post.moment).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss'),
+            createdAt: moment(post.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss')
+        }));
+
         res.status(200).json({
             currentPage: parseInt(page),
             totalPages: Math.ceil(totalItemCount / pageSize),
             totalItemCount,
-            data: posts
+            data: transformedPosts
         });
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
-
 
 // 게시글 상세 조회
 app.get('/posts/:postId', async (req, res) => {
@@ -360,7 +364,6 @@ app.get('/posts/:postId', async (req, res) => {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
-
 
 // 게시글 수정
 app.put('/posts/:postId', async (req, res) => {
@@ -385,13 +388,15 @@ app.put('/posts/:postId', async (req, res) => {
         Object.assign(post, updateData); 
         await post.save();
 
+        post.createdAt = moment(post.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+        post.moment = moment(post.moment).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+
         res.send(post);
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: 'Internal Server Error' });
     }
 });
-
 
 // 게시글 삭제
 app.delete('/posts/:postId', async (req, res) => {
@@ -400,7 +405,6 @@ app.delete('/posts/:postId', async (req, res) => {
 
     try {
         const post = await Post.findById(postId);
-        console.log(post);
         if (!post) {
             return res.status(404).json({ message: "존재하지 않습니다" });
         }
@@ -415,7 +419,6 @@ app.delete('/posts/:postId', async (req, res) => {
     }
 });
 
-
 // 게시글 공감하기
 app.post('/posts/:postId/like', async (req, res) => {
     const { postId } = req.params;
@@ -428,7 +431,7 @@ app.post('/posts/:postId/like', async (req, res) => {
         post.likeCount += 1;
         await post.save();
 
-        const groupId = post.groupId
+        const groupId = post.groupId;
 
         await checkAndAwardBadges(groupId);
         res.status(200).json({ message: "게시글 공감하기 성공" });
@@ -436,7 +439,6 @@ app.post('/posts/:postId/like', async (req, res) => {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
-
 
 // 게시글 조회 권한 확인
 app.post('/posts/:postId/verify-password', async (req, res) => {
@@ -458,7 +460,6 @@ app.post('/posts/:postId/verify-password', async (req, res) => {
     }
 });
 
-
 // 게시글 공개 여부 확인
 app.get('/posts/:postId/is-public', async (req, res) => {
     const { postId } = req.params;
@@ -474,7 +475,6 @@ app.get('/posts/:postId/is-public', async (req, res) => {
     }
 });
 
-
 // 댓글 등록
 app.post('/posts/:postId/comments', async (req, res) => {
     try {
@@ -482,14 +482,13 @@ app.post('/posts/:postId/comments', async (req, res) => {
         if (typeof password !== 'string') {
             return res.status(400).send({ message: 'Password must be a string' });
         }
-        if (!nickname || !content || !password ) {
+        if (!nickname || !content || !password) {
             return res.status(400).json({ message: "잘못된 요청입니다" });
         }
 
         const newComment = new Comment({
             ...req.body,
-            postId: req.params.postId, 
-            
+            postId: req.params.postId,
         });
         await newComment.save();
         res.status(200).send(newComment);
@@ -497,7 +496,6 @@ app.post('/posts/:postId/comments', async (req, res) => {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
-
 
 // 댓글 목록 조회
 app.get('/posts/:postId/comments', async (req, res) => {
@@ -515,7 +513,7 @@ app.get('/posts/:postId/comments', async (req, res) => {
         const totalPages = Math.ceil(totalItemCount / pageSize);
 
         const comments = await Comment.find(filterConditions)
-            .sort({ createdAt: -1 }) 
+            .sort({ createdAt: -1 })
             .skip((page - 1) * pageSize)
             .limit(pageSize)
             .select('nickname content createdAt');
@@ -528,7 +526,7 @@ app.get('/posts/:postId/comments', async (req, res) => {
                 id: comment._id,
                 nickname: comment.nickname,
                 content: comment.content,
-                createdAt: comment.createdAt
+                createdAt: moment(comment.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss')
             }))
         };
 
@@ -539,9 +537,8 @@ app.get('/posts/:postId/comments', async (req, res) => {
     }
 });
 
-
 // 댓글 수정
-app.put('/comments/:commentId', async(req, res) => {
+app.put('/comments/:commentId', async (req, res) => {
     const { commentId } = req.params;
     const { password, ...updateData } = req.body;
 
@@ -563,13 +560,14 @@ app.put('/comments/:commentId', async(req, res) => {
         Object.assign(comment, updateData); 
         await comment.save();
 
+        comment.createdAt = moment(comment.createdAt).tz('Asia/Seoul').format('YYYY-MM-DD HH:mm:ss');
+
         res.send(comment);
     } catch (error) {
         console.error(error);
         res.status(500).send({ message: 'Internal Server Error' });
     }
 });
-
 
 // 댓글 삭제
 app.delete('/comments/:commentId', async (req, res) => {
@@ -593,9 +591,6 @@ app.delete('/comments/:commentId', async (req, res) => {
     }
 });
 
-
-
-
 // 이미지 저장 경로 설정
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -615,19 +610,19 @@ const fileFilter = (req, file, cb) => {
     const allowedTypes = /jpeg|jpg|png|gif/;
     const mimeType = allowedTypes.test(file.mimetype);
     const extName = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  
+
     if (mimeType && extName) {
-      return cb(null, true);
+        return cb(null, true);
     } else {
-      cb(new Error('Only images are allowed'));
+        cb(new Error('Only images are allowed'));
     }
-  };
-  
-  // Multer 미들웨어 설정
-  const upload = multer({
+};
+
+// Multer 미들웨어 설정
+const upload = multer({
     storage: storage,
     fileFilter: fileFilter
-  });
+});
 
 // 이미지 업로드 엔드포인트
 app.post('/image', upload.single('image'), async (req, res) => {
@@ -648,7 +643,7 @@ app.use('/uploads', express.static('uploads'));
 
 mongoose.connect(process.env.DATABASE_URL).then(() => console.log('Connected to DB'));
 app.listen(process.env.PORT || 3000, async() => {
-    console.log('Server Started')
+    console.log('Server Started');
 
     await checkBadgesPeriodically();
     setInterval(checkBadgesPeriodically, 24 * 60 * 60 * 1000);

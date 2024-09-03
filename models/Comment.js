@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import moment from 'moment-timezone';
 
 const CommentSchema = new mongoose.Schema (
     {
@@ -20,7 +21,7 @@ const CommentSchema = new mongoose.Schema (
         },
         createdAt: {
             type: Date,
-            default: Date.now
+            default: () => moment().tz('Asia/Seoul').toDate()
         },
     },
     {

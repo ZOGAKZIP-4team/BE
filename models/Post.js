@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import moment from 'moment-timezone';
 
 const PostSchema = new mongoose.Schema({
     groupId: {
@@ -40,6 +41,7 @@ const PostSchema = new mongoose.Schema({
     moment: {
         type: Date,
         required: true,
+        default: () => moment().tz('Asia/Seoul').toDate()
     },
     isPublic: {
         type: Boolean,
@@ -55,13 +57,12 @@ const PostSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: Date.now
+        default: () => moment().tz('Asia/Seoul').toDate()
     }
 },
 {
     versionKey: false 
-}
-);
+});
 
 const Post = mongoose.model('Post', PostSchema);
 export default Post;
