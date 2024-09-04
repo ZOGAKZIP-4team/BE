@@ -425,7 +425,11 @@ app.delete('/posts/:postId', async (req, res) => {
             return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
         }
 
+        const groupId = post.groupId;
+
         await Post.findByIdAndDelete(postId);
+        await Group.findByIdAndUpdate(groupId, { $inc: { postCount: -1 } });
+
         res.send({ message: '게시글 삭제 성공' });
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
@@ -611,7 +615,10 @@ app.delete('/comments/:commentId', async (req, res) => {
             return res.status(403).json({ message: "비밀번호가 틀렸습니다" });
         }
 
+        const postId = comment.postId;
+
         await Comment.findByIdAndDelete(commentId);
+        await Post.findByIdAndUpdate(postId, { $inc: { commentCount: -1 } });
         res.send({ message: '댓글 삭제 성공' });
     } catch (error) {
         res.status(400).json({ message: "잘못된 요청입니다" });
