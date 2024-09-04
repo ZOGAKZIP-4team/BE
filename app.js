@@ -19,9 +19,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.DATABASE_URL)
-    .then(() => console.log('Connected to DB'))
-    .catch((error) => console.error('DB connection error:', error));
 
 // 그룹 등록
 app.post('/groups', async (req, res) => {
@@ -508,6 +505,10 @@ app.post('/posts/:postId/comments', async (req, res) => {
             createdAt: moment().tz('Asia/Seoul').toDate()  // 한국 시간으로 저장
         });
         await newComment.save();
+
+        await Post.findByIdAndUpdate(req.params.postId, {
+            $inc: { commentCount: 1 }
+        });
 
         const response = {
             ...newComment._doc,
