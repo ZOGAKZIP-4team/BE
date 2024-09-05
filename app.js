@@ -334,7 +334,12 @@ app.get('/groups/:groupId/posts', async (req, res) => {
     try {
         const query = {
             groupId: req.params.groupId, 
-            ...(keyword && { title: { $regex: keyword, $options: 'i' } }),
+            ...(keyword && { 
+                $or: [
+                    { title: { $regex: keyword, $options: 'i' } },  
+                    { tags: keyword }  
+                ]
+            }),
             ...(isPublic !== undefined && { isPublic: isPublic === 'true' })
         };
 
@@ -360,6 +365,8 @@ app.get('/groups/:groupId/posts', async (req, res) => {
         res.status(400).json({ message: "잘못된 요청입니다" });
     }
 });
+
+
 
 // 게시글 상세 조회
 app.get('/posts/:postId', async (req, res) => {
